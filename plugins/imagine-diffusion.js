@@ -1,8 +1,9 @@
 import axios from 'axios';
+const AI_PROXY_API_KEY = encodeURIComponent(process.env.AI_PROXY_API_KEY || '');
 const IMAGE_APIS = [
-    (p) => `https://stable.stacktoy.workers.dev/?apikey=Suhail&prompt=${encodeURIComponent(p)}`,
-    (p) => `https://dalle.stacktoy.workers.dev/?apikey=Suhail&prompt=${encodeURIComponent(p)}`,
-    (p) => `https://flux.gtech-apiz.workers.dev/?apikey=Suhail&text=${encodeURIComponent(p)}`
+    (p) => `https://stable.stacktoy.workers.dev/?apikey=${AI_PROXY_API_KEY}&prompt=${encodeURIComponent(p)}`,
+    (p) => `https://dalle.stacktoy.workers.dev/?apikey=${AI_PROXY_API_KEY}&prompt=${encodeURIComponent(p)}`,
+    (p) => `https://flux.gtech-apiz.workers.dev/?apikey=${AI_PROXY_API_KEY}&text=${encodeURIComponent(p)}`
 ];
 const generateImage = async (prompt) => {
     for (const apiUrl of IMAGE_APIS) {

@@ -1,13 +1,26 @@
 services:
   - type: web
     name: mega-md
-    runtime: docker
-    dockerfilePath: lib/Dockerfile
+    runtime: node
+    plan: standard
+    buildCommand: npm ci
+    startCommand: npm run start:render
+    healthCheckPath: /health
+    disk:
+      name: mega-md-session
+      mountPath: /opt/render/project/src/session
+      sizeGB: 1
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MAX_RSS_MB
+        value: "1700"
+      - key: PAIRING_PAGE_PASSWORD
+        sync: false
       - key: SESSION_ID
-        value: ""
+        sync: false
       - key: OWNER_NUMBER
-        value: "923000000000"
+        sync: false
       - key: BOT_NAME
         value: "MEGA-MD"
       - key: COMMAND_MODE
@@ -21,5 +34,12 @@ services:
       - key: MYSQL_URL
         value: ""
       - key: DB_URL
-        value: ""
-    startCommand: npm run start:optimized
+        sync: false
+      - key: AI_PROXY_API_KEY
+        sync: false
+      - key: CHATBOT_API_KEY
+        sync: false
+      - key: GIPHY_API_KEY
+        sync: false
+      - key: REMOVEBG_KEY
+        sync: false

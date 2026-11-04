@@ -25,12 +25,12 @@ const API_ENDPOINTS = [
     },
     {
         name: 'SparkAPI',
-        url: (text) => `https://discardapi.dpdns.org/api/chat/spark?apikey=guru&text=${encodeURIComponent(text)}`,
+        url: (text) => `https://discardapi.dpdns.org/api/chat/spark?apikey=${encodeURIComponent(process.env.CHATBOT_API_KEY || '')}&text=${encodeURIComponent(text)}`,
         parse: (data) => data?.result?.answer
     },
     {
         name: 'LlamaAPI',
-        url: (text) => `https://discardapi.dpdns.org/api/bot/llama?apikey=guru&text=${encodeURIComponent(text)}`,
+        url: (text) => `https://discardapi.dpdns.org/api/bot/llama?apikey=${encodeURIComponent(process.env.CHATBOT_API_KEY || '')}&text=${encodeURIComponent(text)}`,
         parse: (data) => data?.result
     }
 ];

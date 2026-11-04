@@ -1,8 +1,9 @@
 import axios from 'axios';
+const AI_PROXY_API_KEY = encodeURIComponent(process.env.AI_PROXY_API_KEY || '');
 const AI_APIS = [
-    (q) => `https://mistral.stacktoy.workers.dev/?apikey=Suhail&text=${encodeURIComponent(q)}`,
-    (q) => `https://llama.gtech-apiz.workers.dev/?apikey=Suhail&text=${encodeURIComponent(q)}`,
-    (q) => `https://mistral.gtech-apiz.workers.dev/?apikey=Suhail&text=${encodeURIComponent(q)}`
+    (q) => `https://mistral.stacktoy.workers.dev/?apikey=${AI_PROXY_API_KEY}&text=${encodeURIComponent(q)}`,
+    (q) => `https://llama.gtech-apiz.workers.dev/?apikey=${AI_PROXY_API_KEY}&text=${encodeURIComponent(q)}`,
+    (q) => `https://mistral.gtech-apiz.workers.dev/?apikey=${AI_PROXY_API_KEY}&text=${encodeURIComponent(q)}`
 ];
 const askAI = async (query) => {
     for (const apiUrl of AI_APIS) {

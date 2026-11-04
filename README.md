@@ -116,44 +116,26 @@ git clone https://github.com/GlobalTechInfo/MEGA-MD.git
 cd MEGA-MD
 npm install
 cp sample.env .env
-# Edit .env → add SESSION_ID and OWNER_NUMBER
+# Edit .env → set PAIRING_PAGE_PASSWORD and OWNER_NUMBER
 npm start
 ```
 
 ---
 
-## 🔐 Getting Your Session ID
+## 🔐 Pairing WhatsApp
 > [!IMPORTANT]
-> The bot uses a **Session ID** to connect to WhatsApp without scanning QR every time. Generate it once and paste it in `.env`.
+> You can link your WhatsApp directly from the bot's own pairing page. Set `PAIRING_PAGE_PASSWORD` first; this protects the QR code and pairing-code endpoints.
 
-### Step 1 — Open the session generator
+### Pair from the web page
 
-> 🌐 **https://mega-pairing.onrender.com**
+1. Deploy the bot and open your Render service URL.
+2. Sign in with `PAIRING_PAGE_PASSWORD`.
+3. Scan the displayed QR code, or switch to **Phone number** and enter your number with country code.
+4. Enter the returned pairing code in WhatsApp under **Linked devices → Link a device → Link with phone number**.
 
-### Step 2 — Generate your session
+The linked session is stored in the Render disk and reused after restarts. Keep the page password, QR code, pairing code, and session files private.
 
-**Option A — Pair Code** *(Recommended)*
-
-1. Enter your bot's WhatsApp number with country code (e.g. `923001234567`)
-2. Click **Generate Pair Code**
-3. An 8-character code appears (e.g. `J38K-4PNS`)
-4. On your phone: **WhatsApp → ⋮ Menu → Linked Devices → Link a Device → Link with phone number**
-5. Enter the code — session is created
-6. Copy the **Session ID** shown on the page
-
-**Option B — QR Code**
-
-1. Click the **QR Code** tab
-2. Scan the QR code with your WhatsApp
-3. Copy the **Session ID** shown after scanning
-
-### Step 3 — Add to `.env`
-
-```env
-SESSION_ID=GlobalTechInfo/MEGA-MD_xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-### Alternative — Pairing via terminal
+### Pair from a terminal
 
 Leave `SESSION_ID` empty and set:
 
@@ -162,7 +144,7 @@ PAIRING_NUMBER=923001234567
 ```
 
 > [!NOTE]
-> The bot will print an 8-character pairing code in the terminal on startup. Link it via **WhatsApp → Linked Devices → Link with phone number** within 60 seconds.
+> `PAIRING_NUMBER` prints a pairing code at startup. Otherwise, use the protected web page (or run with `--qr-code` to display a terminal QR).
 
 ---
 
@@ -175,12 +157,15 @@ cp sample.env .env
 ```
 
 ```env
-# ── REQUIRED (choose one) ────────────────────────────────────
+# ── WHATSAPP SESSION (choose one) ────────────────────────────
 SESSION_ID=GlobalTechInfo/MEGA-MD_your_gist_id_here
 # OR
 PAIRING_NUMBER=923001234567
 
-# ── REQUIRED ─────────────────────────────────────────────────
+# ── WEB PAIRING PAGE ─────────────────────────────────────────
+PAIRING_PAGE_PASSWORD=use-a-long-random-secret
+
+# ── BOT OWNER ────────────────────────────────────────────────
 OWNER_NUMBER=923000000000        # No + sign
 
 # ── BOT IDENTITY ─────────────────────────────────────────────
@@ -196,6 +181,8 @@ TIMEZONE=Asia/Karachi
 # ── OPTIONAL API KEYS ────────────────────────────────────────
 REMOVEBG_KEY=                    # https://remove.bg/api
 GIPHY_API_KEY=                   # https://developers.giphy.com
+AI_PROXY_API_KEY=                # Used by text/image AI proxy commands
+CHATBOT_API_KEY=                 # Used by the Spark/Llama chatbot fallbacks
 
 # ── PERFORMANCE ──────────────────────────────────────────────
 PORT=5000
@@ -412,14 +399,12 @@ heroku logs --tail
 
 1. Fork this repo
 2. [render.com](https://render.com) → **New** → **Blueprint** → connect your fork
-3. Render reads `render.yaml` automatically
-4. Set environment variables in the dashboard:
-   - `SESSION_ID`
-   - `OWNER_NUMBER`
-5. Deploy
+3. Render reads `render.yaml`; create a **Standard** web service with its 1 GB disk
+4. Set `PAIRING_PAGE_PASSWORD` to a long, unique secret. Set `OWNER_NUMBER` and any optional AI/API keys you use.
+5. Deploy, open the service URL, sign in, and link WhatsApp by QR or phone pairing code.
 
 > [!IMPORTANT]
-> Render uses Docker (`Dockerfile`) and runs `npm run start:optimized`. Use a database for persistent storage on Render's free tier.
+> WhatsApp requires an always-on service and persistent session storage. The Blueprint uses a paid Standard instance and mounts a disk at `session/`; free Render services sleep and have ephemeral storage. Only the WhatsApp session folder is on that disk; use a database for persistent bot data.
 
 ---
 
@@ -561,8 +546,8 @@ DB_URL=./data/baileys.db
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `SESSION_ID` | ✅ *one of* | — | From mega-pairing.onrender.com |
-| `PAIRING_NUMBER` | ✅ *one of* | — | Phone number for terminal pairing |
+| `SESSION_ID` | ❌ | — | Optional saved Baileys session credential |
+| `PAIRING_NUMBER` | ❌ | — | Phone number for automatic terminal pairing |
 | `OWNER_NUMBER` | ✅ | `923051391007` | Your number, no `+` |
 | `BOT_NAME` | ❌ | `MEGA-MD` | Bot display name |
 | `BOT_OWNER` | ❌ | `Qasim Ali` | Owner display name |
@@ -572,14 +557,21 @@ DB_URL=./data/baileys.db
 | `TIMEZONE` | ❌ | `Asia/Karachi` | Your timezone |
 | `PORT` | ❌ | `5000` | HTTP server port |
 | `MAX_STORE_MESSAGES` | ❌ | `20` | Messages stored per chat |
+| `PAIRING_PAGE_PASSWORD` | ✅ for web pairing | — | Secret password protecting the QR and pairing-code page/API |
+| `AI_PROXY_API_KEY` | ❌ | — | Credential for the configured AI text and image proxy endpoints |
+| `CHATBOT_API_KEY` | ❌ | — | Credential for the Spark/Llama chatbot fallback endpoints |
 | `REMOVEBG_KEY` | ❌ | — | [remove.bg](https://remove.bg) API key |
 | `GIPHY_API_KEY` | ❌ | — | [Giphy](https://developers.giphy.com) API key |
+| `NEOXR_KEY` | ❌ | — | Neoxr key referenced by configuration |
+| `ZENZAPIS_KEY` | ❌ | — | Zenzapis key referenced by configuration |
 | `MONGO_URL` | ❌ | — | MongoDB connection string |
 | `POSTGRES_URL` | ❌ | — | PostgreSQL connection string |
 | `MYSQL_URL` | ❌ | — | MySQL connection string |
 | `DB_URL` | ❌ | — | SQLite file path |
 | `CLEANUP_INTERVAL` | ❌ | `3600000` | Temp cleanup interval (ms) |
 | `STORE_WRITE_INTERVAL` | ❌ | `10000` | Store write interval (ms) |
+
+The bot does not currently call OpenAI or Google Gemini directly. The text and image AI proxy commands read `AI_PROXY_API_KEY`; the chatbot fallback reads `CHATBOT_API_KEY`. These keys are for the existing third-party proxy services, not OpenAI/Gemini credentials. Keep them in Render Environment settings, not in source files. AI features may be unavailable when the relevant provider key is not configured.
 
 ---
 
@@ -649,8 +641,8 @@ export default {
 ### Bot not connecting
 
 > [!IMPORTANT]
-> - Verify `SESSION_ID` starts with `GlobalTechInfo/MEGA-MD_`
-> - If using `PAIRING_NUMBER`, link within 60 seconds of the code appearing
+> - If using `SESSION_ID`, verify the session credential is valid
+> - For Render web pairing, set `PAIRING_PAGE_PASSWORD` and check the service logs if the QR has not appeared yet
 > - Reset session and reconnect: `npm run reset-session && npm start`
 
 ### `myAppStateKey not present` (pin/star broken)

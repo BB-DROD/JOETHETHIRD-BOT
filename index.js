@@ -18,7 +18,7 @@ import pino from 'pino';
 import config from './config.js';
 import store from './lib/lightweight_store.js';
 import SaveCreds from './lib/session.js';
-import { server, PORT } from './lib/server.js';
+import { server, PORT, attachPairingSocket, updatePairingStatus } from './lib/server.js';
 import { printLog } from './lib/print.js';
 import { writeErrorLog } from './lib/logger.js';
 import { handleMessages, handleGroupParticipantUpdate, handleStatus, handleCall } from './lib/messageHandler.js';
@@ -33,12 +33,12 @@ setInterval(() => {
 }, 60000);
 setInterval(() => {
     const used = process.memoryUsage().rss / 1024 / 1024;
-    if (used > 400) {
-        printLog('warning', 'RAM too high (>400MB), restarting bot...');
+    const maxRssMb = Number(process.env.MAX_RSS_MB) || 400;
+    if (used > maxRssMb) {
+        printLog('warning', `RAM too high (>${maxRssMb}MB), restarting bot...`);
         process.exit(1);
     }
 }, 30000);
-const phoneNumber = config.pairingNumber || config.ownerNumber || "923051391005";
 // Auto-create data directory and default files on startup
 const DATA_DEFAULTS = {
     'owner.json': [],
@@ -87,14 +87,6 @@ if (process.stdin.isTTY && !config.pairingNumber) {
     });
     rl.on('close', () => { rlClosed = true; });
 }
-const question = (text) => {
-    if (rl && !rlClosed) {
-        return new Promise((resolve) => rl.question(text, resolve));
-    }
-    else {
-        return Promise.resolve(config.ownerNumber || phoneNumber);
-    }
-};
 process.on('exit', () => {
     if (rl && !rlClosed)
         rl.close();
@@ -215,6 +207,7 @@ async function startQasimDev() {
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 10000,
         });
+        attachPairingSocket(QasimDev, state.creds);
         QasimDev.store = store;
         const originalSendPresenceUpdate = QasimDev.sendPresenceUpdate;
         const originalReadMessages = QasimDev.readMessages;
@@ -345,23 +338,10 @@ async function startQasimDev() {
         QasimDev.public = true;
         QasimDev.serializeM = (m) => smsg(QasimDev, m, store);
         const isRegistered = state.creds?.registered === true;
-        if (pairingCode && !isRegistered) {
+        if (pairingCode && !isRegistered && process.env.PAIRING_NUMBER) {
             if (useMobile)
                 throw new Error('Cannot use pairing code with mobile api');
-            let phoneNumberInput;
-            if (config.pairingNumber) {
-                phoneNumberInput = config.pairingNumber;
-            }
-            else if (process.env.PAIRING_NUMBER) {
-                phoneNumberInput = process.env.PAIRING_NUMBER;
-            }
-            else if (rl && !rlClosed) {
-                phoneNumberInput = await question(chalk.bgBlack(chalk.greenBright(`Please type your WhatsApp number 😍\nFormat: 923001234567 (without + or spaces) : `)));
-            }
-            else {
-                phoneNumberInput = phoneNumber;
-                printLog('info', `Using default phone number: ${phoneNumberInput}`);
-            }
+            let phoneNumberInput = process.env.PAIRING_NUMBER;
             phoneNumberInput = phoneNumberInput.replace(/[^0-9]/g, '');
             const pn = PhoneNumber(`+${ phoneNumberInput}`);
             if (!pn.valid) {
@@ -397,6 +377,13 @@ async function startQasimDev() {
             };
             setTimeout(() => doPairing(phoneNumberInput), 3000);
         }
+        else if (!isRegistered) {
+            printLog('info', 'Waiting for QR scan or phone pairing from the web page');
+            if (rl && !rlClosed) {
+                rl.close();
+                rl = null;
+            }
+        }
         else if (isRegistered) {
             if (rl && !rlClosed) {
                 rl.close();
@@ -412,6 +399,7 @@ async function startQasimDev() {
         }
         QasimDev.ev.on('connection.update', async (s) => {
             const { connection, lastDisconnect, qr } = s;
+            updatePairingStatus({ connection, qr });
             if (qr) {
                 if (!pairingCode) {
                     try {
