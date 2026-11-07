@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { smsg } from './lib/myfunc.js';
 import { compileAll } from './lib/compile.js';
-import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers, jidDecode, jidNormalizedUser, makeCacheableSignalKeyStore, delay } from '@whiskeysockets/baileys';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers, jidDecode, makeCacheableSignalKeyStore, delay } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
 import pino from 'pino';
 import config from './config.js';
@@ -215,9 +215,8 @@ async function startQasimDev() {
             generateHighQualityLinkPreview: true,
             syncFullHistory: false,
             getMessage: async (key) => {
-                const jid = jidNormalizedUser(key.remoteJid);
-                const msg = await store.loadMessage(jid, key.id);
-                return msg?.message || "";
+                const msg = await store.loadMessage(key.remoteJid, key.id);
+                return msg?.message || undefined;
             },
             msgRetryCounterCache,
             defaultQueryTimeoutMs: 60000,
