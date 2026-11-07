@@ -34,7 +34,7 @@ const enhancePrompt = (prompt) => {
 };
 export default {
     command: 'diffusion',
-    aliases: ['aiimage', 'draw', 'genimage'],
+    aliases: [],
     category: 'ai',
     description: 'Generate an AI image based on your prompt',
     usage: '.diffusion <prompt>',

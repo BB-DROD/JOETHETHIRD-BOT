@@ -4,7 +4,7 @@ import path from 'path';
 import { uploadToX0 } from '../lib/uploaders.js';
 export default {
     command: 'xoat',
-    aliases: ['xo', 'x0at', 'x0'],
+    aliases: ['x0at', 'x0'],
     category: 'upload',
     description: 'Upload to X0.at (anonymous)',
     usage: '.xoat (reply to media or caption on media)',

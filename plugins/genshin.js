@@ -7,7 +7,7 @@ function decodeUnicode(str) {
 }
 export default {
     command: 'genshin',
-    aliases: ['gh', 'uid'],
+    aliases: ['uid'],
     category: 'stalk',
     description: 'Stalk Genshin Impact UID',
     usage: '.genshin <UID>',

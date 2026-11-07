@@ -268,7 +268,7 @@ You:
 }
 export default {
     command: 'chatbot',
-    aliases: ['bot', 'ai', 'achat'],
+    aliases: ['achat'],
     category: 'admin',
     description: 'Enable or disable AI chatbot for the group',
     usage: '.chatbot <on|off>',

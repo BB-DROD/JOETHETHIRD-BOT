@@ -25,7 +25,7 @@ const downloadWithRetry = async (url, retries = 3) => {
 };
 export default {
     command: 'song',
-    aliases: ['music', 'audio', 'mp3'],
+    aliases: ['audio', 'mp3'],
     category: 'music',
     description: 'Download song from YouTube (MP3)',
     usage: '.song <song name | youtube link>',

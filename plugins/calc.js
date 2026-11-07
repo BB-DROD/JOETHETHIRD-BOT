@@ -40,7 +40,7 @@ function safeMath(expr) {
 }
 export default {
     command: 'calc',
-    aliases: ['math', 'calculate', 'solve'],
+    aliases: ['calculate', 'solve'],
     category: 'utility',
     description: 'Advanced calculator',
     usage: '.calc <expression>',

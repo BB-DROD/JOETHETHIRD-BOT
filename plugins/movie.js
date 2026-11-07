@@ -2,7 +2,7 @@ import axios from 'axios';
 const OMDB_KEY = 'trilogy';
 export default {
     command: 'movie',
-    aliases: ['film', 'bollywood', 'omdb', 'imdb'],
+    aliases: ['bollywood', 'omdb'],
     category: 'info',
     description: 'Search movie info, ratings, cast, plot',
     usage: '.movie <movie name>\n.movie Pathaan\n.movie Jawan 2023',

@@ -22,7 +22,7 @@ const askAI = async (query) => {
 };
 export default {
     command: 'llama',
-    aliases: ['ai', 'chat', 'ask'],
+    aliases: [],
     category: 'ai',
     description: 'Ask a question to AI',
     usage: '.llama <question>',

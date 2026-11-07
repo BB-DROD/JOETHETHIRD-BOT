@@ -39,7 +39,7 @@ function getExtFromMessage(msg) {
 }
 export default {
     command: 'url',
-    aliases: ['geturl', 'mediaurl'],
+    aliases: ['geturl'],
     category: 'tools',
     description: 'Get a URL for media (image, video, audio, sticker, document).',
     usage: '.url (send or reply to media)',

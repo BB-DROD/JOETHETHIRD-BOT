@@ -1,6 +1,6 @@
 export default {
     command: 'kick',
-    aliases: ['remove', 'fire'],
+    aliases: ['fire'],
     category: 'admin',
     description: 'Remove user(s) from the group',
     usage: '.kick @user or reply to message',

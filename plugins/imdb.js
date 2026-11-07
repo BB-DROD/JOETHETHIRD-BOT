@@ -1,6 +1,6 @@
 export default {
     command: 'imdb',
-    aliases: ['movie', 'film'],
+    aliases: ['film'],
     category: 'info',
     description: 'Get detailed information about a movie or series from IMDB',
     usage: '.imdb <movie/series title>',

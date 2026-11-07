@@ -1,6 +1,6 @@
 export default {
     command: 'gcmtdata',
-    aliases: ['gcinfo', 'groupinfo', 'gcmetadata', 'groupdata'],
+    aliases: ['gcmetadata', 'groupdata'],
     category: 'group',
     description: 'Get detailed info about the current group',
     usage: '.gcinfo',

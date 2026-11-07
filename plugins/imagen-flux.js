@@ -34,7 +34,7 @@ const enhancePrompt = (prompt) => {
 };
 export default {
     command: 'flux',
-    aliases: ['aiimage', 'imagen', 'draw', 'genimage'],
+    aliases: ['imagen'],
     category: 'ai',
     description: 'Generate an AI image based on your prompt',
     usage: '.flux <prompt>',

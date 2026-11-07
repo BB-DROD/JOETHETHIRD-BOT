@@ -4,7 +4,7 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 export default {
     command: 'cipher',
-    aliases: ['encrypt', 'decrypt', 'encode', 'crypt'],
+    aliases: ['encrypt', 'decrypt', 'crypt'],
     category: 'utility',
     description: 'Encrypt or decrypt text using Caesar, Vigenere, or XOR cipher',
     usage: '.cipher <type> <encode|decode> <key> <text>',

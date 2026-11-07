@@ -178,12 +178,29 @@ async function startQasimDev() {
         const { version } = await fetchLatestBaileysVersion();
         ensureSessionDirectory();
         await delay(1000);
-        const { state, saveCreds } = await useMultiFileAuthState(`./session`);
+        const sessionPath = ensureSessionDirectory();
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
         const _saveCreds = async () => {
-            ensureSessionDirectory();
-            await saveCreds();
+            try {
+                await saveCreds();
+            }
+            catch (error) {
+                printLog('error', `Failed to persist WhatsApp auth state: ${error.message}`);
+                writeErrorLog({
+                    type: 'authStateSaveError',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+            }
         };
-        const msgRetryCounterCache = new NodeCache();
+        const msgRetryCounterCache = new NodeCache({
+            stdTTL: 10 * 60,
+            checkperiod: 60,
+            useClones: false
+        });
+        msgRetryCounterCache.on('set', (key, retryCount) => {
+            printLog('warning', `WhatsApp message decryption retry ${retryCount} requested for ${key}`);
+        });
         const ghostMode = await store.getSetting('global', 'stealthMode');
         const isGhostActive = ghostMode && ghostMode.enabled;
         const QasimDev = makeWASocket({
@@ -207,6 +224,7 @@ async function startQasimDev() {
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 10000,
         });
+        QasimDev.msgRetryCounterCache = msgRetryCounterCache;
         attachPairingSocket(QasimDev, state.creds);
         QasimDev.store = store;
         const originalSendPresenceUpdate = QasimDev.sendPresenceUpdate;
@@ -252,50 +270,58 @@ async function startQasimDev() {
         QasimDev.ev.on('creds.update', _saveCreds);
         store.bind(QasimDev.ev);
         QasimDev.ev.on('messages.upsert', async (chatUpdate) => {
-            try {
-                const mek = chatUpdate.messages[0];
-                if (!mek.message)
-                    return;
-                mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage')
-                    ? mek.message.ephemeralMessage.message
-                    : mek.message;
-                if (mek.key && mek.key.remoteJid === 'status@broadcast') {
-                    await handleStatus(QasimDev, chatUpdate);
-                    return;
-                }
-                if (!QasimDev.public && !mek.key.fromMe && chatUpdate.type === 'notify') {
-                    const isGroup = mek.key?.remoteJid?.endsWith('@g.us');
-                    if (!isGroup)
-                        return;
-                }
-                if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16)
-                    return;
-                if (QasimDev?.msgRetryCounterCache) {
-                    QasimDev.msgRetryCounterCache.clear();
-                }
+            const messages = Array.isArray(chatUpdate?.messages) ? chatUpdate.messages : [];
+            for (const mek of messages) {
                 try {
-                    await handleMessages(QasimDev, chatUpdate);
+                    if (!mek?.message)
+                        continue;
+                    if (!mek.key?.remoteJid || !mek.key?.id) {
+                        printLog('warning', 'Skipping incoming message with a missing remote JID or message key');
+                        continue;
+                    }
+                    if (Object.keys(mek.message)[0] === 'ephemeralMessage') {
+                        mek.message = mek.message.ephemeralMessage?.message;
+                        if (!mek.message) {
+                            printLog('warning', `Skipping ephemeral message with no inner payload (${mek.key.id})`);
+                            continue;
+                        }
+                    }
+                    const messageUpdate = { ...chatUpdate, messages: [mek] };
+                    if (mek.key.remoteJid === 'status@broadcast') {
+                        await handleStatus(QasimDev, messageUpdate);
+                        continue;
+                    }
+                    if (!QasimDev.public && !mek.key.fromMe && chatUpdate.type === 'notify') {
+                        const isGroup = mek.key.remoteJid.endsWith('@g.us');
+                        if (!isGroup)
+                            continue;
+                    }
+                    if (mek.key.id.startsWith('BAE5') && mek.key.id.length === 16)
+                        continue;
+                    await handleMessages(QasimDev, messageUpdate);
                 }
                 catch (err) {
-                    printLog('error', `Error in handleMessages: ${err.message}`);
-                    if (mek.key && mek.key.remoteJid) {
-                        await QasimDev.sendMessage(mek.key.remoteJid, {
-                            text: '❌ An error occurred while processing your message.',
-                            contextInfo: {
-                                forwardingScore: 1,
-                                isForwarded: true,
-                                forwardedNewsletterMessageInfo: {
-                                    newsletterJid: '120363319098372999@newsletter',
-                                    newsletterName: 'GlobalTechInc',
-                                    serverMessageId: -1
+                    printLog('error', `Error processing message ${mek?.key?.id || '(missing key)'}: ${err.message}`);
+                    if (mek?.key?.remoteJid) {
+                        try {
+                            await QasimDev.sendMessage(mek.key.remoteJid, {
+                                text: '❌ An error occurred while processing your message.',
+                                contextInfo: {
+                                    forwardingScore: 1,
+                                    isForwarded: true,
+                                    forwardedNewsletterMessageInfo: {
+                                        newsletterJid: '120363319098372999@newsletter',
+                                        newsletterName: 'GlobalTechInc',
+                                        serverMessageId: -1
+                                    }
                                 }
-                            }
-                        }).catch(console.error);
+                            });
+                        }
+                        catch (sendError) {
+                            printLog('error', `Failed to send message-processing error response: ${sendError.message}`);
+                        }
                     }
                 }
-            }
-            catch (err) {
-                printLog('error', `Error in messages.upsert: ${err.message}`);
             }
         });
         QasimDev.decodeJid = (jid) => {
@@ -515,23 +541,6 @@ async function main() {
     });
 }
 main();
-// Session cleanup interval
-const sessionDir = path.join(process.cwd(), 'session');
-setInterval(() => {
-    if (!fs.existsSync(sessionDir))
-        return;
-    fs.readdir(sessionDir, (err, files) => {
-        if (err)
-            return;
-        for (const file of files) {
-            if (file === 'creds.json')
-                continue;
-            if (file.startsWith('app-state-sync-key-'))
-                continue;
-            fs.unlink(path.join(sessionDir, file), () => { });
-        }
-    });
-}, 3 * 60 * 1000);
 // Temp folder setup
 const customTemp = path.join(process.cwd(), 'temp');
 if (!fs.existsSync(customTemp))

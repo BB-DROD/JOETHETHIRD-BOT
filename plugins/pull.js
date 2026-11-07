@@ -1,7 +1,7 @@
 import { simpleGit } from 'simple-git';
 export default {
     command: 'gitpull',
-    aliases: ['refresh', 'pull'],
+    aliases: ['pull'],
     category: 'owner',
     description: 'Reload all plugins (Pull changes from git if available)',
     usage: '.gitpull',

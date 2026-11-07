@@ -1,6 +1,6 @@
 export default {
     command: 'joingroup',
-    aliases: ['join', 'gcjoin', 'groupinfo'],
+    aliases: ['join', 'gcjoin'],
     category: 'owner',
     description: 'Join a group via invite link or get group info from link',
     usage: '.joingroup <link or code>\n.groupinfo <link or code>',

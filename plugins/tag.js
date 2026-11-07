@@ -13,7 +13,7 @@ async function downloadMediaMessage(message, mediaType) {
 }
 export default {
     command: 'tag',
-    aliases: ['tagall', 'hidetag'],
+    aliases: [],
     category: 'admin',
     description: 'Tag all group members',
     usage: '.tag [message] or reply to a message',

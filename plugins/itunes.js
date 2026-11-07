@@ -1,6 +1,6 @@
 export default {
     command: 'itunes',
-    aliases: ['song', 'music', 'track'],
+    aliases: ['track'],
     category: 'info',
     description: 'Get detailed information about a song from iTunes',
     usage: '.itunes <song name>',

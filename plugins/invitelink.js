@@ -1,6 +1,6 @@
 export default {
     command: 'invitelink',
-    aliases: ['invite', 'grouplink', 'gclink', 'revokeinvite', 'resetlink'],
+    aliases: ['grouplink', 'gclink', 'revokeinvite'],
     category: 'group',
     description: 'Get or revoke the group invite link',
     usage: '.invitelink — get link\n.revokeinvite — reset link',
